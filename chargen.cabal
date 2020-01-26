@@ -16,13 +16,14 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Chargen, RandomUtil
-  other-modules:       Character
+  exposed-modules:     Chargen
+                     , RandomUtil
+                     , Character
                      , Character.Alignment
                      , Character.Attributes
                      , Character.SavingThrows
                      , Queries
-                     , Paths_chargen
+  other-modules:       Paths_chargen
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , scotty

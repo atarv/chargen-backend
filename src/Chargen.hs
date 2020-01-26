@@ -39,9 +39,11 @@ app' = do
         chars <- liftIO $ replicateM c $ randomCharacter randomAttributes3D6
         S.json chars
 
+-- | This is exported for use in automated tests
 app :: IO Application
 app = S.scottyApp app'
 
+-- | Start the application
 runApp :: IO ()
 runApp = do
     S.scotty 8080 app'

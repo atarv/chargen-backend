@@ -11,7 +11,15 @@ import           GHC.Generics
 import           Data.Text                     as T
 import           Text.Read                      ( readMaybe )
 
-data Alignment = LG | LN | LE | NG | N | NE | CG | CN | CE
+data Alignment = LG -- ^ Lawful Good
+               | LN -- ^ Lawful Neutral
+               | LE -- ^ Lawful Evil
+               | NG -- ^ Neutral Good
+               | N  -- ^ (True) Neutral
+               | NE -- ^ Neutral Evil
+               | CG -- ^ Chaotic Good
+               | CN -- ^ Chaotic Neutral
+               | CE -- ^ Chaotic Evil
     deriving (Show, Read, Generic, Eq)
 
 instance FromJSON Alignment
@@ -28,6 +36,7 @@ instance FromField Alignment where
 instance FromRow Alignment where
     fromRow = field
 
+-- | Convert Alignment to a readable name
 alignmentName :: Alignment -> T.Text
 alignmentName a = case a of
     LG -> "Lawful Good"

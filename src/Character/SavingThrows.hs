@@ -5,8 +5,12 @@ import           Data.Aeson
 import           Database.SQLite.Simple.FromRow
 import           GHC.Generics
 
-data SavingThrows = SavingThrows { magicItems :: Int, breath :: Int
-                                 , death :: Int, petrify :: Int, spells :: Int}
+data SavingThrows = SavingThrows { magicItems :: Int
+                                 , breath :: Int
+                                 , death :: Int
+                                 , petrify :: Int
+                                 , spells :: Int
+                                 }
     deriving (Show, Read, Generic)
 
 instance ToJSON SavingThrows
