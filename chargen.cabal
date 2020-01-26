@@ -17,7 +17,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Chargen, RandomUtil
-  other-modules:       Character.Alignment
+  other-modules:       Character
+                     , Character.Alignment
                      , Character.Attributes
                      , Character.SavingThrows
                      , Queries

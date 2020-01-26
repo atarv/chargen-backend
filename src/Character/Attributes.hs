@@ -6,6 +6,7 @@ import           Control.Monad                  ( replicateM )
 import           Data.Maybe                     ( fromJust )
 import           Data.Aeson
 import           GHC.Generics
+import Database.SQLite.Simple.FromRow
 import           Data.List
 
 data Attributes =
@@ -15,6 +16,8 @@ data Attributes =
 
 instance ToJSON Attributes
 instance FromJSON Attributes
+instance FromRow Attributes where
+    fromRow = Attributes <$> field <*> field <*> field <*> field <*> field <*> field
 
 fromList :: [Int] -> Maybe Attributes
 fromList xs
