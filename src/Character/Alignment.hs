@@ -4,11 +4,12 @@ module Character.Alignment where
 import           Data.Aeson
 import           Database.SQLite.Simple
 import           Database.SQLite.Simple.FromField
+import           Database.SQLite.Simple.FromRow
 import           Database.SQLite.Simple.Internal
 import           Database.SQLite.Simple.Ok
 import           GHC.Generics
 import           Data.Text                     as T
-import           Text.Read (readMaybe)
+import           Text.Read                      ( readMaybe )
 
 data Alignment = LG | LN | LE | NG | N | NE | CG | CN | CE
     deriving (Show, Read, Generic, Eq)
@@ -24,6 +25,8 @@ instance FromField Alignment where
                                        (Field (SQLText t) mdata)
                                        "need alignment abbreviation"
     fromField f = returnError ConversionFailed f "need alignment abbreviation"
+instance FromRow Alignment where
+    fromRow = field
 
 alignmentName :: Alignment -> T.Text
 alignmentName a = case a of

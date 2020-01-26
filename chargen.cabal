@@ -11,12 +11,17 @@ copyright:           2020 Aleksi Tarvainen
 category:            Web
 build-type:          Simple
 extra-source-files:  README.md
+data-files:          assets/chargen.db
 cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
   exposed-modules:     Chargen, RandomUtil
-  other-modules:       Character.Alignment, Character.Attributes, Character.SavingThrows
+  other-modules:       Character.Alignment
+                     , Character.Attributes
+                     , Character.SavingThrows
+                     , Queries
+                     , Paths_chargen
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , scotty

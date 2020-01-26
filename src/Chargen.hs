@@ -15,6 +15,8 @@ import           Data.Aeson.Types
 import           Character.Attributes
 import           Control.Monad
 import           Control.Monad.IO.Class
+import           System.Environment
+import           Queries
 
 app' :: S.ScottyM ()
 app' = do
@@ -28,9 +30,18 @@ app' = do
         c     <- S.param "count" :: S.ActionM Int
         attrs <- liftIO $ replicateM c randomAttributes3D6
         S.json attrs
+    S.get "/alignment" $ do
+        a <- liftIO $ randomAlignment
+        S.json a
+    S.get "/alignment/:count" $ do
+        c          <- S.param "count" :: S.ActionM Int
+        alignments <- liftIO $ replicateM c randomAlignment
+        S.json alignments
+
 
 app :: IO Application
 app = S.scottyApp app'
 
 runApp :: IO ()
-runApp = S.scotty 8080 app'
+runApp = do
+    S.scotty 8080 app'
