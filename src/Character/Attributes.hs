@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, DeriveGeneric #-}
-module Attributes where
+module Character.Attributes where
 
 import           RandomUtil                     ( nTimesRoll )
 import           Control.Monad                  ( replicateM )

@@ -1,11 +1,17 @@
 {-# LANGUAGE OverloadedStrings, QuasiQuotes #-}
-module Main ( main) where
+module Main
+    ( main
+    )
+where
 
 import           Test.Hspec
 import           Test.Hspec.Wai
 import           Test.Hspec.Wai.JSON
 import           Network.HTTP.Types.Header
-import           Data.Aeson                     ( Value(..) , object , (.=))
+import           Data.Aeson                     ( Value(..)
+                                                , object
+                                                , (.=)
+                                                )
 import           Example                        ( app )
 
 main :: IO ()

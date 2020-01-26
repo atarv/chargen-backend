@@ -2,7 +2,7 @@ name:                chargen
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/atarv/chargen#readme
+homepage:            https://github.com/atarv/chargen-backend#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Aleksi Tarvainen
@@ -15,13 +15,15 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Chargen, Attributes, RandomUtil
+  exposed-modules:     Chargen, RandomUtil
+  other-modules:       Character.Alignment, Character.Attributes, Character.SavingThrows
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , scotty
                      , wai
                      , sqlite-simple
                      , random
+                     , text
   default-language:    Haskell2010
 
 executable chargen-exe
@@ -48,4 +50,4 @@ test-suite chargen-test
 
 source-repository head
   type:     git
-  location: https://github.com/atarv/chargen
+  location: https://github.com/atarv/chargen-backend

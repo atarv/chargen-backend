@@ -12,7 +12,7 @@ import           Network.Wai                    ( Application
 import qualified Web.Scotty                    as S
 import           Data.Aeson
 import           Data.Aeson.Types
-import           Attributes
+import           Character.Attributes
 import           Control.Monad
 import           Control.Monad.IO.Class
 
