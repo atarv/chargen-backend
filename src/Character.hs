@@ -4,11 +4,12 @@ module Character where
 import           Data.Aeson
 import           Database.SQLite.Simple.FromRow
 import           GHC.Generics
-import Character.Attributes
-import Character.Alignment
-import Character.SavingThrows
+import           Character.Attributes
+import           Character.Alignment
+import           Character.SavingThrows
 
-data Character = Character {race :: String, cClass :: String, alignment :: Alignment, attr :: Attributes}
+data Character = Character {race :: String, cClass :: String
+                           , alignment :: Alignment, attributes :: Attributes}
     deriving (Show, Read, Generic)
 
 instance ToJSON Character

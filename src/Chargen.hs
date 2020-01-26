@@ -37,7 +37,13 @@ app' = do
         c          <- S.param "count" :: S.ActionM Int
         alignments <- liftIO $ replicateM c randomAlignment
         S.json alignments
-
+    S.get "/character" $ do
+        char <- liftIO $ randomCharacter randomAttributes3D6
+        S.json char
+    S.get "/character/:count" $ do
+        c       <- S.param "count" :: S.ActionM Int
+        chars   <- liftIO $ replicateM c $ randomCharacter randomAttributes3D6
+        S.json chars
 
 app :: IO Application
 app = S.scottyApp app'
