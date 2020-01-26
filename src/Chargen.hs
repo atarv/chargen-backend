@@ -5,17 +5,11 @@ module Chargen
     )
 where
 
-import           Network.Wai                    ( Application
-                                                , pathInfo
-                                                , Request
-                                                )
+import           Network.Wai                    ( Application )
 import qualified Web.Scotty                    as S
-import           Data.Aeson
-import           Data.Aeson.Types
 import           Character.Attributes
 import           Control.Monad
 import           Control.Monad.IO.Class
-import           System.Environment
 import           Queries
 
 app' :: S.ScottyM ()
@@ -37,12 +31,12 @@ app' = do
         c          <- S.param "count" :: S.ActionM Int
         alignments <- liftIO $ replicateM c randomAlignment
         S.json alignments
-    S.get "/character" $ do
-        char <- liftIO $ randomCharacter randomAttributes3D6
+    S.get "/character" $ do
+        char <- liftIO $ randomCharacter randomAttributes3D6
         S.json char
-    S.get "/character/:count" $ do
-        c       <- S.param "count" :: S.ActionM Int
-        chars   <- liftIO $ replicateM c $ randomCharacter randomAttributes3D6
+    S.get "/character/:count" $ do
+        c     <- S.param "count" :: S.ActionM Int
+        chars <- liftIO $ replicateM c $ randomCharacter randomAttributes3D6
         S.json chars
 
 app :: IO Application

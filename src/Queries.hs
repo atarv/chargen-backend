@@ -2,16 +2,19 @@
 module Queries where
 
 import           Database.SQLite.Simple
-import           Database.SQLite.Simple.FromRow
-import           Database.SQLite.Simple.FromField
-import           Database.SQLite.Simple.Ok
 import           Database.SQLite.Simple.QQ
 import           Paths_chargen                  ( getDataFileName )
 import           Character
 import           Character.Alignment
-import           Character.Attributes
+import           Character.Attributes    hiding ( str
+                                                , dex
+                                                , con
+                                                , int
+                                                , wis
+                                                , cha
+                                                )
 
-
+openChargenDb :: IO Connection
 openChargenDb = getDataFileName "assets/chargen.db" >>= open
 
 randomAlignment :: IO Alignment
@@ -29,8 +32,8 @@ randomAlignment = do
 
 maybeGenerateCharacter :: Attributes -> IO (Maybe Character)
 maybeGenerateCharacter (Attributes str dex con int wis cha) = do
-    connection  <- openChargenDb
-    character <- queryNamed
+    connection <- openChargenDb
+    character  <- queryNamed
         connection
         [sql|
             SELECT r.race_name, c.class_name, a.alignment_abbrev, 
@@ -64,9 +67,7 @@ maybeGenerateCharacter (Attributes str dex con int wis cha) = do
         , ":cha" := cha
         ]
     close connection
-    if null character
-        then return Nothing
-        else return $ Just (head character)
+    if null character then return Nothing else return $ Just (head character)
 
 randomCharacter :: IO Attributes -> IO Character
 randomCharacter attributeGen = do
