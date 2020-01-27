@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Character.Attributes where
 
 import           RandomUtil                     ( nTimesRoll )

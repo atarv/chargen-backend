@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Chargen
     ( app
     , runApp
@@ -14,8 +14,7 @@ import           Queries
 
 app' :: S.ScottyM ()
 app' = do
-    S.get "/hello" $ do
-        S.text "Hello, world!"
+    S.get "/hello" $ S.text "Hello, world!"
     S.post "/post" $ do
         b <- S.body
         S.setHeader "Content-Type" "text/plain"
@@ -45,5 +44,4 @@ app = S.scottyApp app'
 
 -- | Start the application
 runApp :: IO ()
-runApp = do
-    S.scotty 8080 app'
+runApp = S.scotty 8080 app'
