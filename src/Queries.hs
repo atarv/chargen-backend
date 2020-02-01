@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings, QuasiQuotes #-}
 module Queries
     ( randomAlignment
-    , randomCharacter
-    , maybeGenerateCharacter
+    , nRandomCharacters
     )
 where
 
+import           Control.Monad
 import           Database.SQLite.Simple
 import           Database.SQLite.Simple.QQ
 import           Paths_chargen                  ( getDataFileName )
@@ -38,10 +38,10 @@ randomAlignment = do
     return align
 
 -- | Try to generate a random 'Character' with given 'Attributes'
-maybeGenerateCharacter :: Attributes -> IO (Maybe Character)
-maybeGenerateCharacter (Attributes str dex con int wis cha) = do
-    connection <- openChargenDb
-    character  <- queryNamed
+maybeGenerateCharacter :: Connection -> IO Attributes -> IO (Maybe Character)
+maybeGenerateCharacter connection attributeGen = do
+    (Attributes str dex con int wis cha) <- attributeGen
+    character                            <- queryNamed
         connection
         [sql|
             SELECT r.race_name, c.class_name, a.alignment_abbrev, 
@@ -87,16 +87,25 @@ maybeGenerateCharacter (Attributes str dex con int wis cha) = do
         , ":wis" := wis
         , ":cha" := cha
         ]
-    close connection
     if null character then return Nothing else return $ Just (head character)
 
 randomCharacter
-    :: IO Attributes -- ^ Method used to generate attributes. eg. 'randomAttributes3D6'
+    :: Connection    -- ^ Database connection
+    -> IO Attributes -- ^ Method used to generate attributes. eg. 'randomAttributes3D6'
     -> IO Character  -- ^ Random character
-randomCharacter attributeGen = do
-    attr <- attributeGen
-    char <- maybeGenerateCharacter attr
+randomCharacter connection attributeGen = do
+    char <- maybeGenerateCharacter connection attributeGen
     case char of
         Just c  -> return c
-        Nothing -> randomCharacter attributeGen
+        Nothing -> randomCharacter connection attributeGen
+
+nRandomCharacters
+    :: Int              -- ^ Number of characters to generate
+    -> IO Attributes    -- ^ Method to generate attributes
+    -> IO [Character]   -- ^ Random characters
+nRandomCharacters n attributeGen = do
+    conn  <- openChargenDb
+    chars <- replicateM n $ randomCharacter conn attributeGen
+    close conn
+    return chars
 

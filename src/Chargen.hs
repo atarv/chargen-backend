@@ -12,6 +12,7 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Queries
 
+-- | Define routes
 app' :: S.ScottyM ()
 app' = do
     S.get "/hello" $ S.text "Hello, world!"
@@ -31,11 +32,11 @@ app' = do
         alignments <- liftIO $ replicateM c randomAlignment
         S.json alignments
     S.get "/character" $ do
-        char <- liftIO $ randomCharacter randomAttributes3D6
+        char <- liftIO $ nRandomCharacters 1 randomAttributes3D6
         S.json char
     S.get "/character/:count" $ do
         c     <- S.param "count" :: S.ActionM Int
-        chars <- liftIO $ replicateM c $ randomCharacter randomAttributes3D6
+        chars <- liftIO $ nRandomCharacters c randomAttributes3D6
         S.json chars
 
 -- | This is exported for use in automated tests
