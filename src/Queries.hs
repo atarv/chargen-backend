@@ -56,9 +56,13 @@ maybeGenerateCharacter (Attributes str dex con int wis cha) = do
             AND (:int + r.int_mod) BETWEEN r.int_min AND r.int_max
             AND (:wis + r.wis_mod) BETWEEN r.wis_min AND r.wis_max
             AND (:cha + r.cha_mod) BETWEEN r.cha_min AND r.cha_max
-            -- Get only classes allowed by race
-            AND r.race_id = rac.race_id
-            AND rac.class_id = c.class_id
+            -- Get class allowed for race at random
+            AND c.class_id = (
+                SELECT class_id FROM RaceAllowedClass
+                WHERE r.race_id = race_id
+                ORDER BY RANDOM()
+                LIMIT 1
+            )
             -- Check that attributes meet the requirements of the class
             AND (:str + r.str_mod) >= c.str_min
             AND (:dex + r.dex_mod) >= c.dex_min
@@ -66,9 +70,13 @@ maybeGenerateCharacter (Attributes str dex con int wis cha) = do
             AND (:int + r.int_mod) >= c.int_min
             AND (:wis + r.wis_mod) >= c.wis_min
             AND (:cha + r.cha_mod) >= c.cha_min
-            -- Alignments allowed for class
-            AND c.class_id = cla.class_id
-            AND a.alignment_abbrev = cla.alignment_abbrev
+            -- Get allowed alignment at random
+            AND a.alignment_abbrev = (
+                SELECT alignment_abbrev FROM ClassAllowedAlignment
+                WHERE c.class_id = class_id
+                ORDER BY RANDOM()
+                LIMIT 1
+            )
             ORDER BY RANDOM()
             LIMIT 1;
             |]
