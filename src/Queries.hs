@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings, QuasiQuotes #-}
 module Queries
-    ( randomAlignment
-    , nRandomCharacters
+    ( nRandomCharacters
     , defaultOptions
     )
 where
@@ -31,37 +30,26 @@ defaultOptions = QueryOptions { minLevel = 1, maxLevel = 20 }
 openChargenDb :: IO Connection
 openChargenDb = getDataFileName "assets/chargen.db" >>= open
 
-randomAlignment :: IO Alignment
-randomAlignment = do
-    connection <- openChargenDb
-    [align]    <-
-        query_
-            connection
-            [sql| SELECT alignment_abbrev FROM Alignment
-                  ORDER BY RANDOM()
-                  LIMIT 1;
-            |] :: IO
-            [Alignment]
-    close connection
-    return align
-
 -- | Try to generate random 'Character' with given 'Attributes'
 maybeGenerateCharacter
     :: Connection -> QueryOptions -> IO Attributes -> IO (Maybe Character)
 maybeGenerateCharacter connection options attributeGen = do
-    (Attributes str dex con int wis cha) <- attributeGen
+    (Attributes str dex con int wis cha) <- attributeGen -- generate attributes
     character                            <- queryNamed
         connection
         [sql|
             SELECT r.race_name, c.class_name,
                    (ABS(RANDOM()) % MIN(:maxLevel,
                             CASE WHEN xpt.max_level IS NULL THEN 9000 
-                                 ELSE xpt.max_level END) + :minLevel),
+                                 ELSE xpt.max_level END) + :minLevel) as level,
                    a.alignment_abbrev, 
                    (:str + r.str_mod), (:dex + r.dex_mod), (:con + r.con_mod),
-                   (:int + r.con_mod), (:wis + r.wis_mod), (:cha + r.cha_mod)
+                   (:int + r.con_mod), (:wis + r.wis_mod), (:cha + r.cha_mod),
+                   strow.magic_items, strow.breath, strow.death, strow.petrify,
+                   strow.spells
             FROM Alignment a, Class c, ClassAllowedAlignment cla, Race r,
-                 RaceAllowedClass rac, XPTable xpt
+                 RaceAllowedClass rac, XPTable xpt, SavingThrowTable stt,
+                 SavingThrowRow strow
             -- Attributes must be between requirements of race
             WHERE (:str + r.str_mod) BETWEEN r.str_min AND r.str_max
             AND (:dex + r.dex_mod) BETWEEN r.dex_min AND r.dex_max
@@ -76,7 +64,8 @@ maybeGenerateCharacter connection options attributeGen = do
                 ORDER BY RANDOM()
                 LIMIT 1
             )
-            -- Check that attributes meet the requirements of the class
+            -- Check that attributes meet the requirements of the class with
+            -- racial modifiers applied
             AND (:str + r.str_mod) >= c.str_min
             AND (:dex + r.dex_mod) >= c.dex_min
             AND (:con + r.con_mod) >= c.con_min
@@ -90,7 +79,14 @@ maybeGenerateCharacter connection options attributeGen = do
                 ORDER BY RANDOM()
                 LIMIT 1
             )
+            -- Get saving throws with respect to class and level
             AND xpt.xp_table_id = c.xp_table_id
+            AND stt.class_id = c.class_id
+            AND strow.st_table_id = stt.st_table_id
+            AND strow.min_level = (SELECT MAX(min_level) FROM SavingThrowRow
+                WHERE min_level <= level
+                AND st_table_id = stt.st_table_id
+                AND stt.class_id = c.class_id)
             ORDER BY RANDOM()
             LIMIT 1;
             |]
@@ -100,15 +96,16 @@ maybeGenerateCharacter connection options attributeGen = do
         , ":int" := int
         , ":wis" := wis
         , ":cha" := cha
-        , ":minLevel" := (1 :: Int)
-        , ":maxLevel" := (20 :: Int)
+        , ":minLevel" := minLevel options
+        , ":maxLevel" := maxLevel options
         ]
     if null character then return Nothing else return $ Just (head character)
 
 randomCharacter
     :: Connection    -- ^ Database connection
     -> QueryOptions  -- ^ Options to restrict query results
-    -> IO Attributes -- ^ Method used to generate attributes. eg. 'randomAttributes3D6'
+    -> IO Attributes -- ^ Method used to generate attributes. eg. 
+                     --   'randomAttributes3D6'
     -> IO Character  -- ^ Random character
 randomCharacter connection options attributeGen = do
     char <- maybeGenerateCharacter connection options attributeGen
@@ -118,7 +115,7 @@ randomCharacter connection options attributeGen = do
 
 nRandomCharacters
     :: Int              -- ^ Number of characters to generate
-    -> QueryOptions  -- ^ Options to restrict query results
+    -> QueryOptions     -- ^ Options to restrict query results
     -> IO Attributes    -- ^ Method to generate attributes
     -> IO [Character]   -- ^ Random characters
 nRandomCharacters n options attributeGen = do

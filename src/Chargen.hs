@@ -16,7 +16,7 @@ import           Queries
 app' :: S.ScottyM ()
 app' = do
     S.get "/character" $ do
-        char <- liftIO $ nRandomCharacters 1  defaultOptions randomAttributes3D6
+        char <- liftIO $ nRandomCharacters 1 defaultOptions randomAttributes3D6
         S.json char
     S.get "/character/:count" $ do
         c     <- S.param "count" :: S.ActionM Int
