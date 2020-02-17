@@ -2,6 +2,7 @@
 module Queries
     ( randomAlignment
     , nRandomCharacters
+    , defaultOptions
     )
 where
 
@@ -18,6 +19,13 @@ import           Character.Attributes    hiding ( str
                                                 , wis
                                                 , cha
                                                 )
+
+data QueryOptions = QueryOptions { minLevel :: Int, maxLevel :: Int }
+    deriving(Show, Eq)
+
+-- | Default options for restricting query results
+defaultOptions :: QueryOptions
+defaultOptions = QueryOptions { minLevel = 1, maxLevel = 20 }
 
 -- | Open connection to SQLite database conveniently
 openChargenDb :: IO Connection
@@ -37,18 +45,23 @@ randomAlignment = do
     close connection
     return align
 
--- | Try to generate a random 'Character' with given 'Attributes'
-maybeGenerateCharacter :: Connection -> IO Attributes -> IO (Maybe Character)
-maybeGenerateCharacter connection attributeGen = do
+-- | Try to generate random 'Character' with given 'Attributes'
+maybeGenerateCharacter
+    :: Connection -> QueryOptions -> IO Attributes -> IO (Maybe Character)
+maybeGenerateCharacter connection options attributeGen = do
     (Attributes str dex con int wis cha) <- attributeGen
     character                            <- queryNamed
         connection
         [sql|
-            SELECT r.race_name, c.class_name, a.alignment_abbrev, 
+            SELECT r.race_name, c.class_name,
+                   (ABS(RANDOM()) % MIN(:maxLevel,
+                            CASE WHEN xpt.max_level IS NULL THEN 9000 
+                                 ELSE xpt.max_level END) + :minLevel),
+                   a.alignment_abbrev, 
                    (:str + r.str_mod), (:dex + r.dex_mod), (:con + r.con_mod),
                    (:int + r.con_mod), (:wis + r.wis_mod), (:cha + r.cha_mod)
             FROM Alignment a, Class c, ClassAllowedAlignment cla, Race r,
-                 RaceAllowedClass rac
+                 RaceAllowedClass rac, XPTable xpt
             -- Attributes must be between requirements of race
             WHERE (:str + r.str_mod) BETWEEN r.str_min AND r.str_max
             AND (:dex + r.dex_mod) BETWEEN r.dex_min AND r.dex_max
@@ -77,6 +90,7 @@ maybeGenerateCharacter connection attributeGen = do
                 ORDER BY RANDOM()
                 LIMIT 1
             )
+            AND xpt.xp_table_id = c.xp_table_id
             ORDER BY RANDOM()
             LIMIT 1;
             |]
@@ -86,26 +100,30 @@ maybeGenerateCharacter connection attributeGen = do
         , ":int" := int
         , ":wis" := wis
         , ":cha" := cha
+        , ":minLevel" := (1 :: Int)
+        , ":maxLevel" := (20 :: Int)
         ]
     if null character then return Nothing else return $ Just (head character)
 
 randomCharacter
     :: Connection    -- ^ Database connection
+    -> QueryOptions  -- ^ Options to restrict query results
     -> IO Attributes -- ^ Method used to generate attributes. eg. 'randomAttributes3D6'
     -> IO Character  -- ^ Random character
-randomCharacter connection attributeGen = do
-    char <- maybeGenerateCharacter connection attributeGen
+randomCharacter connection options attributeGen = do
+    char <- maybeGenerateCharacter connection options attributeGen
     case char of
         Just c  -> return c
-        Nothing -> randomCharacter connection attributeGen
+        Nothing -> randomCharacter connection options attributeGen
 
 nRandomCharacters
     :: Int              -- ^ Number of characters to generate
+    -> QueryOptions  -- ^ Options to restrict query results
     -> IO Attributes    -- ^ Method to generate attributes
     -> IO [Character]   -- ^ Random characters
-nRandomCharacters n attributeGen = do
+nRandomCharacters n options attributeGen = do
     conn  <- openChargenDb
-    chars <- replicateM n $ randomCharacter conn attributeGen
+    chars <- replicateM n $ randomCharacter conn options attributeGen
     close conn
     return chars
 
