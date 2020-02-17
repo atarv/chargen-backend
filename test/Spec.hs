@@ -19,23 +19,6 @@ main = hspec spec
 
 spec :: Spec
 spec = with app $ do
-    describe "GET /hello" $ do
-        it "responds with 'Hello, world!'"
-            $                   get "/hello"
-            `shouldRespondWith` "Hello, world!"
-
-        it "responds with 200 / 'Hello, world!'"
-            $                   get "/hello"
-            `shouldRespondWith` "Hello, world!" { matchStatus = 200 }
-
-        it "has 'Content-Type: text/plain; charset=utf-8'"
-            $                   get "/hello"
-            `shouldRespondWith` 200
-                                    { matchHeaders =
-                                        [ "Content-Type"
-                                              <:> "text/plain; charset=utf-8"
-                                        ]
-                                    }
     describe "GET /character"
         $                   it "responds with 200 and JSON content"
         $                   get "/character"
