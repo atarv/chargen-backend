@@ -21,7 +21,7 @@ instance FromRow SavingThrows where
 fromList :: [Int] -> Maybe SavingThrows
 fromList xs
     | length xs == 5
-    = let [magic, breath, death, petrify, spells] = xs
-      in  Just (SavingThrows magic breath death petrify spells)
+    = let [magic', breath', death', petrify', spells'] = xs
+      in  Just (SavingThrows magic' breath' death' petrify' spells')
     | otherwise
     = Nothing

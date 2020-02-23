@@ -8,7 +8,6 @@ where
 import           Network.Wai                    ( Application )
 import qualified Web.Scotty                    as S
 import           Character.Attributes
-import           Control.Monad
 import           Control.Monad.IO.Class
 import           Queries
 

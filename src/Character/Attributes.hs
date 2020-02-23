@@ -30,8 +30,8 @@ instance FromRow Attributes where
 fromList :: [Int] -> Maybe Attributes
 fromList xs
     | length xs == 6
-    = let [str, dex, con, int, wis, cha] = xs
-      in  Just (Attributes str dex con int wis cha)
+    = let [str', dex', con', int', wis', cha'] = xs
+      in  Just (Attributes str' dex' con' int' wis' cha')
     | otherwise
     = Nothing
 

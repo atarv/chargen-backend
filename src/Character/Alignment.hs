@@ -4,7 +4,6 @@ module Character.Alignment where
 import           Data.Aeson
 import           Database.SQLite.Simple
 import           Database.SQLite.Simple.FromField
-import           Database.SQLite.Simple.FromRow
 import           Database.SQLite.Simple.Internal
 import           Database.SQLite.Simple.Ok
 import           GHC.Generics
