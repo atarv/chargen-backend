@@ -9,6 +9,7 @@ import           Control.Monad
 import           Database.SQLite.Simple
 import           Database.SQLite.Simple.QQ
 import           Paths_chargen                  ( getDataFileName )
+import           RandomUtil                     ( randInt )
 import           Character
 import           Character.Alignment
 import           Character.Attributes    hiding ( str
@@ -35,14 +36,11 @@ maybeGenerateCharacter
     :: Connection -> QueryOptions -> IO Attributes -> IO (Maybe Character)
 maybeGenerateCharacter connection options attributeGen = do
     (Attributes str dex con int wis cha) <- attributeGen -- generate attributes
-    character                            <- queryNamed
+    level <- randInt (minLevel options, maxLevel options)
+    character <- queryNamed
         connection
         [sql|
-            SELECT r.race_name, c.class_name,
-                   (ABS(RANDOM()) % MIN(:maxLevel,
-                            CASE WHEN xpt.max_level IS NULL THEN 9000 
-                                 ELSE xpt.max_level END) + :minLevel) as level,
-                   a.alignment_abbrev, 
+            SELECT r.race_name, c.class_name, :level, a.alignment_abbrev, 
                    (:str + r.str_mod), (:dex + r.dex_mod), (:con + r.con_mod),
                    (:int + r.con_mod), (:wis + r.wis_mod), (:cha + r.cha_mod),
                    strow.magic_items, strow.breath, strow.death, strow.petrify,
@@ -84,7 +82,7 @@ maybeGenerateCharacter connection options attributeGen = do
             AND stt.class_id = c.class_id
             AND strow.st_table_id = stt.st_table_id
             AND strow.min_level = (SELECT MAX(min_level) FROM SavingThrowRow
-                WHERE min_level <= level
+                WHERE min_level <= :level
                 AND st_table_id = stt.st_table_id
                 AND stt.class_id = c.class_id)
             ORDER BY RANDOM()
@@ -96,8 +94,7 @@ maybeGenerateCharacter connection options attributeGen = do
         , ":int" := int
         , ":wis" := wis
         , ":cha" := cha
-        , ":minLevel" := minLevel options
-        , ":maxLevel" := maxLevel options
+        , ":level" := level
         ]
     if null character then return Nothing else return $ Just (head character)
 
