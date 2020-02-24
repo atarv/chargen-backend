@@ -21,6 +21,7 @@ library
                      , Character
                      , Character.Alignment
                      , Character.Attributes
+                     , Character.Class
                      , Character.SavingThrows
                      , Queries
   other-modules:       Paths_chargen

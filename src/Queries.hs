@@ -47,7 +47,7 @@ maybeGenerateCharacter connection options attributeGen = do
     character <- queryNamed
         connection
         [sql|
-            SELECT r.race_name, c.class_name, 
+            SELECT r.race_name, c.class_id, 
                 MIN(:randLevel, CASE WHEN xpt.max_level IS NULL 
                     THEN 9000 ELSE xpt.max_level END) as level,
                 a.alignment_abbrev, 
