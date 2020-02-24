@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings, QuasiQuotes, DeriveGeneric #-}
 module Queries
     ( nRandomCharacters
-    , defaultOptions
+    , Queries.defaultOptions
     )
 where
 
@@ -18,9 +18,16 @@ import           Character.Attributes    hiding ( str
                                                 , wis
                                                 , cha
                                                 )
+import           GHC.Generics
+import           Data.Aeson
+import           Data.Aeson.Types
 
 data QueryOptions = QueryOptions { minLevel :: Int, maxLevel :: Int }
-    deriving(Show, Eq)
+    deriving(Show, Read, Eq, Generic)
+
+instance FromJSON QueryOptions where
+    parseJSON = withObject "QueryOptions"
+        $ \q -> QueryOptions <$> q .: "minLevel" <*> q .: "maxLevel"
 
 -- | Default options for restricting query results
 defaultOptions :: QueryOptions
@@ -35,15 +42,19 @@ maybeGenerateCharacter
     :: Connection -> QueryOptions -> IO Attributes -> IO (Maybe Character)
 maybeGenerateCharacter connection options attributeGen = do
     (Attributes str dex con int wis cha) <- attributeGen -- generate attributes
+    -- generate random level for character
     randLevel <- randInt (minLevel options, maxLevel options)
     character <- queryNamed
         connection
         [sql|
-            SELECT r.race_name, c.class_name, :randLevel, a.alignment_abbrev, 
-                   (:str + r.str_mod), (:dex + r.dex_mod), (:con + r.con_mod),
-                   (:int + r.con_mod), (:wis + r.wis_mod), (:cha + r.cha_mod),
-                   strow.magic_items, strow.breath, strow.death, strow.petrify,
-                   strow.spells
+            SELECT r.race_name, c.class_name, 
+                MIN(:randLevel, CASE WHEN xpt.max_level IS NULL 
+                    THEN 9000 ELSE xpt.max_level END) as level,
+                a.alignment_abbrev, 
+                (:str + r.str_mod), (:dex + r.dex_mod), (:con + r.con_mod),
+                (:int + r.con_mod), (:wis + r.wis_mod), (:cha + r.cha_mod),
+                strow.magic_items, strow.breath, strow.death, strow.petrify,
+                strow.spells
             FROM Alignment a, Class c, ClassAllowedAlignment cla, Race r,
                  RaceAllowedClass rac, XPTable xpt, SavingThrowTable stt,
                  SavingThrowRow strow
@@ -81,7 +92,7 @@ maybeGenerateCharacter connection options attributeGen = do
             AND stt.class_id = c.class_id
             AND strow.st_table_id = stt.st_table_id
             AND strow.min_level = (SELECT MAX(min_level) FROM SavingThrowRow
-                WHERE min_level <= :randLevel
+                WHERE min_level <= level
                 AND st_table_id = stt.st_table_id
                 AND stt.class_id = c.class_id)
             ORDER BY RANDOM()
