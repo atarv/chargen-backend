@@ -2,6 +2,8 @@
 module Queries
     ( nRandomCharacters
     , Queries.defaultOptions
+    , QueryOptions(..)
+    , validateQuery
     )
 where
 
@@ -20,18 +22,35 @@ import           Character.Attributes    hiding ( str
                                                 )
 import           GHC.Generics
 import           Data.Aeson
-import           Data.Aeson.Types
+import           Data.String
 
-data QueryOptions = QueryOptions { minLevel :: Int, maxLevel :: Int }
+data QueryOptions = QueryOptions { count :: Int, minLevel :: Int, maxLevel :: Int }
     deriving(Show, Read, Eq, Generic)
 
+instance ToJSON QueryOptions
 instance FromJSON QueryOptions where
-    parseJSON = withObject "QueryOptions"
-        $ \q -> QueryOptions <$> q .: "minLevel" <*> q .: "maxLevel"
+    parseJSON =
+        withObject "QueryOptions"
+            $ \q ->
+                  QueryOptions
+                      <$> q
+                      .:  "count"
+                      <*> q
+                      .:  "minLevel"
+                      <*> q
+                      .:  "maxLevel"
+
+-- | Checks that query will have meaningful results
+validateQuery :: IsString a => QueryOptions -> Either a QueryOptions
+validateQuery QueryOptions { count = c, minLevel = minL, maxLevel = maxL }
+    | c < 1 = Left "Invalid count"
+    | minL < 1 || minL > maxL = Left "Invalid level constraints"
+    | otherwise = Right
+        (QueryOptions { count = c, minLevel = minL, maxLevel = maxL })
 
 -- | Default options for restricting query results
 defaultOptions :: QueryOptions
-defaultOptions = QueryOptions { minLevel = 1, maxLevel = 20 }
+defaultOptions = QueryOptions { count = 10, minLevel = 1, maxLevel = 20 }
 
 -- | Open connection to SQLite database conveniently
 openChargenDb :: IO Connection

@@ -29,6 +29,7 @@ library
                      , aeson
                      , scotty
                      , wai
+                     , http-types
                      , sqlite-simple
                      , random
                      , text

@@ -6,6 +6,7 @@ module Chargen
 where
 
 import           Network.Wai                    ( Application )
+import           Network.HTTP.Types.Status
 import qualified Web.Scotty                    as S
 import           Character.Attributes
 import           Control.Monad.IO.Class
@@ -17,10 +18,13 @@ app' = do
     S.get "/character" $ do
         char <- liftIO $ nRandomCharacters 1 defaultOptions randomAttributes3D6
         S.json char
-    S.get "/character/:count" $ do
-        c     <- S.param "count" :: S.ActionM Int
-        chars <- liftIO $ nRandomCharacters c defaultOptions randomAttributes3D6
-        S.json chars
+    S.post "/character" $ do
+        queryOpt <- S.jsonData
+        case validateQuery queryOpt of
+            Right q ->
+                liftIO (nRandomCharacters (count q) q randomAttributes3D6)
+                    >>= S.json
+            Left msg -> S.text msg >> S.status badRequest400
 
 -- | This is exported for use in automated tests
 app :: IO Application

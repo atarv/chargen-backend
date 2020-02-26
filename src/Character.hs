@@ -10,7 +10,7 @@ import           Character.SavingThrows
 import           Character.Class
 
 -- | Represents in-game character
-data Character = Character {race :: String, cClass :: Class, level :: Int
+data Character = Character { race :: String, cClass :: Class, level :: Int
                            , alignment :: Alignment, attributes :: Attributes
                            , savingThrows :: SavingThrows }
     deriving (Show, Read, Generic)

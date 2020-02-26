@@ -11,11 +11,17 @@ import           Network.HTTP.Types.Header
 import           Data.Aeson                     ( Value(..)
                                                 , object
                                                 , (.=)
+                                                , encode
                                                 )
 import           Chargen                        ( app )
+import           Queries
 
 main :: IO ()
 main = hspec spec
+
+
+postBody = encode $ QueryOptions { count = 10, minLevel = 2, maxLevel = 5 }
+minGTmax = encode $ QueryOptions { count = 10, minLevel = 3, maxLevel = 1 }
 
 spec :: Spec
 spec = with app $ do
@@ -29,15 +35,20 @@ spec = with app $ do
                                     ]
                                 }
         -- it "responds with a random OSRIC character" 
-    describe "GET /character/10"
+    describe "POST /character"
         $                   it "responds with 200 and JSON content"
-        $                   get "/character/10"
+        $                   post "/character" postBody
         `shouldRespondWith` 200
                                 { matchHeaders =
                                     [ "Content-Type"
                                           <:> "application/json; charset=utf-8"
                                     ]
                                 }
+    describe "POST /character : invalid level constraints"
+        $                   it "responds with 400"
+        $                   post "/character" minGTmax
+        `shouldRespondWith` 400
+
 
 
 
