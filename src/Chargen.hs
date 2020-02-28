@@ -7,14 +7,28 @@ where
 
 import           Network.Wai                    ( Application )
 import           Network.HTTP.Types.Status
+import           Network.HTTP.Types.Method
+import           Network.HTTP.Types.Header
+import           Network.Wai.Middleware.Cors
 import qualified Web.Scotty                    as S
 import           Character.Attributes
 import           Control.Monad.IO.Class
 import           Queries
 
+corsPolicy :: CorsResourcePolicy
+corsPolicy = CorsResourcePolicy Nothing
+                                [methodPost, methodGet, methodOptions]
+                                [hContentType, hAuthorization]
+                                Nothing
+                                Nothing
+                                False
+                                False
+                                False
+
 -- | Define routes
 app' :: S.ScottyM ()
 app' = do
+    S.middleware $ cors (const $ Just corsPolicy)
     S.get "/character" $ do
         char <- liftIO $ nRandomCharacters 1 defaultOptions randomAttributes3D6
         S.json char
@@ -24,7 +38,8 @@ app' = do
             Right q ->
                 liftIO (nRandomCharacters (count q) q randomAttributes3D6)
                     >>= S.json
-            Left msg -> S.text msg >> S.status badRequest400
+            Left msg ->
+                S.json ("Invalid query" :: String) >> S.status badRequest400
 
 -- | This is exported for use in automated tests
 app :: IO Application
