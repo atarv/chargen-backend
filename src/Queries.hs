@@ -24,6 +24,7 @@ import           GHC.Generics
 import           Data.Aeson
 import           Data.String
 
+-- | User given options and constraints for generating random characters
 data QueryOptions = QueryOptions { count :: Int, minLevel :: Int, maxLevel :: Int }
     deriving(Show, Read, Eq, Generic)
 
@@ -127,6 +128,7 @@ maybeGenerateCharacter connection options attributeGen = do
         ]
     if null character then return Nothing else return $ Just (head character)
 
+-- | Creates a random character (guaranteed)
 randomCharacter
     :: Connection    -- ^ Database connection
     -> QueryOptions  -- ^ Options to restrict query results
@@ -139,6 +141,7 @@ randomCharacter connection options attributeGen = do
         Just c  -> return c
         Nothing -> randomCharacter connection options attributeGen
 
+-- | Creates a number of random characters
 nRandomCharacters
     :: Int              -- ^ Number of characters to generate
     -> QueryOptions     -- ^ Options to restrict query results

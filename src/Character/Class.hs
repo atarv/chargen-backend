@@ -13,5 +13,4 @@ instance ToJSON Class
 instance FromField Class where
     fromField field = do
         x <- fromField field
-        return $ toEnum x
-
+        return $ toEnum x -- Convert from `alignment_id` to Class instance
