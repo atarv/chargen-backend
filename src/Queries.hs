@@ -20,38 +20,64 @@ import           Character.Attributes    hiding ( str
                                                 , wis
                                                 , cha
                                                 )
+import           Character.Class
+import           Character.Race
 import           GHC.Generics
 import           Data.Aeson
 import           Data.String
+import           Data.List
 
 -- | User given options and constraints for generating random characters
-data QueryOptions = QueryOptions { count :: Int, minLevel :: Int, maxLevel :: Int }
+data QueryOptions =
+    QueryOptions { count :: Int , minLevel :: Int, maxLevel :: Int
+                 , selectedRaces :: [Race],  selectedClasses :: [Class]}
     deriving(Show, Read, Eq, Generic)
 
 instance ToJSON QueryOptions
 instance FromJSON QueryOptions where
-    parseJSON =
-        withObject "QueryOptions"
-            $ \q ->
-                  QueryOptions
-                      <$> q
-                      .:  "count"
-                      <*> q
-                      .:  "minLevel"
-                      <*> q
-                      .:  "maxLevel"
+    parseJSON = withObject "QueryOptions" $ \q ->
+        QueryOptions
+            <$> q
+            .:  "count"
+            <*> q
+            .:  "minLevel"
+            <*> q
+            .:  "maxLevel"
+            <*> q
+            .:  "selectedRaces"
+            <*> q
+            .:  "selectedClasses"
 
 -- | Checks that query will have meaningful results
-validateQuery :: IsString a => QueryOptions -> Either a QueryOptions
-validateQuery QueryOptions { count = c, minLevel = minL, maxLevel = maxL }
-    | c < 1 = Left "Invalid count"
-    | minL < 1 || minL > maxL = Left "Invalid level constraints"
-    | otherwise = Right
-        (QueryOptions { count = c, minLevel = minL, maxLevel = maxL })
+-- validateQuery :: IsString a => QueryOptions -> Either a QueryOptions
+validateQuery (QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selectedClasses = classes, selectedRaces = races })
+    | c < 1
+    = Left "Invalid count"
+    | minL < 1 || minL > maxL
+    = Left "Invalid level constraints"
+    | null races
+    = Left "No races selected"
+    | null classes
+    = Left "No classes selected"
+    | otherwise
+    = Right
+        (QueryOptions { count           = c
+                      , minLevel        = minL
+                      , maxLevel        = maxL
+                      , selectedClasses = classes
+                      , selectedRaces   = races
+                      }
+        )
 
 -- | Default options for restricting query results
 defaultOptions :: QueryOptions
-defaultOptions = QueryOptions { count = 10, minLevel = 1, maxLevel = 20 }
+defaultOptions = QueryOptions
+    { count           = 10
+    , minLevel        = 1
+    , maxLevel        = 20
+    , selectedClasses = [(Assassin) .. ]
+    , selectedRaces   = [(Dwarf) ..]
+    }
 
 -- | Open connection to SQLite database conveniently
 openChargenDb :: IO Connection
@@ -66,6 +92,7 @@ maybeGenerateCharacter connection options attributeGen = do
     randLevel <- randInt (minLevel options, maxLevel options)
     character <- queryNamed
         connection
+        -- TODO: Implement race and class constraints to SQL query
         [sql|
             SELECT r.race_name, c.class_id, 
                 MIN(:randLevel, CASE WHEN xpt.max_level IS NULL 
