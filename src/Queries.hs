@@ -24,8 +24,6 @@ import           Character.Class
 import           Character.Race
 import           GHC.Generics
 import           Data.Aeson
-import           Data.String
-import           Data.List
 
 -- | User given options and constraints for generating random characters
 data QueryOptions =
@@ -49,7 +47,7 @@ instance FromJSON QueryOptions where
             .:  "selectedClasses"
 
 -- | Checks that query will have meaningful results
--- validateQuery :: IsString a => QueryOptions -> Either a QueryOptions
+validateQuery :: QueryOptions -> Either String QueryOptions
 validateQuery (QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selectedClasses = classes, selectedRaces = races })
     | c < 1
     = Left "Invalid count"
@@ -71,13 +69,12 @@ validateQuery (QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selec
 
 -- | Default options for restricting query results
 defaultOptions :: QueryOptions
-defaultOptions = QueryOptions
-    { count           = 10
-    , minLevel        = 1
-    , maxLevel        = 20
-    , selectedClasses = [(Assassin) .. ]
-    , selectedRaces   = [(Dwarf) ..]
-    }
+defaultOptions = QueryOptions { count           = 10
+                              , minLevel        = 1
+                              , maxLevel        = 20
+                              , selectedClasses = [(Assassin) ..]
+                              , selectedRaces   = [(Dwarf) ..]
+                              }
 
 -- | Open connection to SQLite database conveniently
 openChargenDb :: IO Connection

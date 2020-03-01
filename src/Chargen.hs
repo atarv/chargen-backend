@@ -38,7 +38,7 @@ app' = do
             Right q ->
                 liftIO (nRandomCharacters (count q) q randomAttributes3D6)
                     >>= S.json
-            Left msg ->
+            Left _ ->
                 S.json ("Invalid query" :: String) >> S.status badRequest400
 
 -- | This is exported for use in automated tests

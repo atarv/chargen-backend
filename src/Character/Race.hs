@@ -5,7 +5,7 @@ import           GHC.Generics
 import           Database.SQLite.Simple.FromField
 
 -- TODO: Add rest of the races
-data Race = UndefinedRace | Dwarf | Elf | Gnome
+data Race = UndefinedRace | Dwarf | Elf | Gnome
     deriving (Enum, Bounded, Eq, Show, Read, Generic)
 
 instance FromJSON Race

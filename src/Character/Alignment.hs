@@ -9,6 +9,7 @@ import           Database.SQLite.Simple.Ok
 import           GHC.Generics
 import           Data.Text                     as T
 import           Text.Read                      ( readMaybe )
+import           Control.Monad                  ( mzero )
 
 data Alignment = LG -- ^ Lawful Good
                | LN -- ^ Lawful Neutral
@@ -21,8 +22,11 @@ data Alignment = LG -- ^ Lawful Good
                | CE -- ^ Chaotic Evil
     deriving (Show, Read, Generic, Eq)
 
-instance FromJSON Alignment
-instance ToJSON Alignment
+instance FromJSON Alignment where
+    parseJSON (Object t) = fromAlignmentName <$> (t .: "value")
+    parseJSON _          = mzero
+instance ToJSON Alignment where
+    toJSON al = toJSON $ alignmentName al
 instance FromField Alignment where
     fromField (Field (SQLText t) mdata) =
         let alignment = (readMaybe . T.unpack) t :: Maybe Alignment
@@ -47,3 +51,16 @@ alignmentName a = case a of
     CG -> "Chaotic Good"
     CN -> "Chaotic Neutral"
     CE -> "Chaotic Evil"
+
+fromAlignmentName :: T.Text -> Alignment
+fromAlignmentName a = case a of
+    "Lawful Good"     -> LG
+    "Lawful Neutral"  -> LN
+    "Lawful Evil"     -> LE
+    "Neutral Good"    -> NG
+    "Neutral"         -> N
+    "Neutral Evil"    -> NE
+    "Chaotic Good"    -> CG
+    "Chaotic Neutral" -> CN
+    "Chaotic Evil"    -> CE
+    _                 -> error "Cannot convert to Alignment"
