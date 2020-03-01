@@ -12,7 +12,9 @@ import           Control.Monad
 import           Database.SQLite.Simple
 import           Database.SQLite.Simple.QQ
 import           Paths_chargen                  ( getDataFileName )
-import           RandomUtil                     ( randInt )
+import           RandomUtil                     ( randInt
+                                                , chooseFromSet
+                                                )
 import           Character
 import           Character.Attributes    hiding ( str
                                                 , dex
@@ -89,7 +91,7 @@ defaultOptions = QueryOptions { count           = 10
 
 -- | Open connection to SQLite database conveniently
 openChargenDb :: IO Connection
-openChargenDb = getDataFileName "assets/chargen.db" >>= open
+openChargenDb = open =<< getDataFileName "assets/chargen.db"
 
 -- | Try to generate random 'Character' with given 'Attributes'
 maybeGenerateCharacter
@@ -99,6 +101,17 @@ maybeGenerateCharacter connection options attributeGen = do
     -- generate random level for character, possibly overridden by class maximum
     -- level
     randLevel <- randInt (minLevel options, maxLevel options)
+    -- Choose race and class at random with restrictions given in options
+    chosenRace <- chooseFromSet $ Set.filter
+        (\r -> (not . Set.disjoint (selectedClasses options) . allowedClasses) r
+        )
+        (selectedRaces options)
+    chosenClass <-
+        ( chooseFromSet
+            . Set.intersection (selectedClasses options)
+            . allowedClasses
+            )
+            chosenRace
     character <- queryNamed
         connection
         -- TODO: Implement race and class constraints to SQL query
@@ -121,13 +134,8 @@ maybeGenerateCharacter connection options attributeGen = do
             AND (:int + r.int_mod) BETWEEN r.int_min AND r.int_max
             AND (:wis + r.wis_mod) BETWEEN r.wis_min AND r.wis_max
             AND (:cha + r.cha_mod) BETWEEN r.cha_min AND r.cha_max
-            -- Get class allowed for race at random
-            AND c.class_id = (
-                SELECT class_id FROM RaceAllowedClass
-                WHERE r.race_id = race_id
-                ORDER BY RANDOM()
-                LIMIT 1
-            )
+            AND r.race_id = :raceId
+            AND c.class_id = :classId
             -- Check that attributes meet the requirements of the class with
             -- racial modifiers applied
             AND (:str + r.str_mod) >= c.str_min
@@ -161,6 +169,8 @@ maybeGenerateCharacter connection options attributeGen = do
         , ":wis" := wis
         , ":cha" := cha
         , ":randLevel" := randLevel
+        , ":raceId" := fromEnum chosenRace
+        , ":classId" := fromEnum chosenClass
         ]
     if Prelude.null character
         then return Nothing
