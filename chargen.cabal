@@ -17,7 +17,6 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Chargen
-                     , RandomUtil
                      , Character
                      , Character.Alignment
                      , Character.Attributes
@@ -25,16 +24,18 @@ library
                      , Character.Race
                      , Character.SavingThrows
                      , Queries
+                     , RandomUtil
   other-modules:       Paths_chargen
   build-depends:       base >= 4.7 && < 5
                      , aeson
+                     , containers
+                     , http-types
+                     , random
                      , scotty
+                     , sqlite-simple
+                     , text
                      , wai
                      , wai-cors
-                     , http-types
-                     , sqlite-simple
-                     , random
-                     , text
   default-language:    Haskell2010
 
 executable chargen-exe
@@ -56,6 +57,7 @@ test-suite chargen-test
                      , hspec-wai-json
                      , http-types
                      , aeson
+                     , containers
   ghc-options:         -threaded -O2 -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 

@@ -6,7 +6,7 @@ import           Database.SQLite.Simple.FromField
 
 -- TODO: Add rest of the character classes
 data Class = Unused | Assassin | Cleric | Druid | Fighter
-    deriving (Enum, Bounded, Eq, Show, Read, Generic)
+    deriving (Enum, Bounded, Eq, Ord, Show, Read, Generic)
 
 instance FromJSON Class
 instance ToJSON Class

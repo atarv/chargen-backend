@@ -7,6 +7,7 @@ module Queries
     )
 where
 
+import           Prelude
 import           Control.Monad
 import           Database.SQLite.Simple
 import           Database.SQLite.Simple.QQ
@@ -24,11 +25,12 @@ import           Character.Class
 import           Character.Race
 import           GHC.Generics
 import           Data.Aeson
+import           Data.Set                      as Set
 
 -- | User given options and constraints for generating random characters
 data QueryOptions =
     QueryOptions { count :: Int , minLevel :: Int, maxLevel :: Int
-                 , selectedRaces :: [Race],  selectedClasses :: [Class]}
+                 , selectedRaces :: Set Race,  selectedClasses :: Set Class}
     deriving(Show, Read, Eq, Generic)
 
 instance ToJSON QueryOptions
@@ -53,10 +55,19 @@ validateQuery (QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selec
     = Left "Invalid count"
     | minL < 1 || minL > maxL
     = Left "Invalid level constraints"
-    | null races
+    | Set.null races
     = Left "No races selected"
-    | null classes
+    | Set.null classes
     = Left "No classes selected"
+    | Unused `Set.member` classes
+    = Left "Forbidden class"
+    | UndefinedRace `Set.member` races
+    = Left "Forbidden race"
+    | Set.disjoint classes $ Set.foldl
+        (\cls r -> Set.union (allowedClasses r) cls)
+        Set.empty
+        races
+    = Left "No permitted class selected for given races"
     | otherwise
     = Right
         (QueryOptions { count           = c
@@ -72,8 +83,8 @@ defaultOptions :: QueryOptions
 defaultOptions = QueryOptions { count           = 10
                               , minLevel        = 1
                               , maxLevel        = 20
-                              , selectedClasses = [(Assassin) ..]
-                              , selectedRaces   = [(Dwarf) ..]
+                              , selectedClasses = Set.fromList [(Assassin) ..]
+                              , selectedRaces   = Set.fromList [(Dwarf) ..]
                               }
 
 -- | Open connection to SQLite database conveniently
@@ -85,7 +96,8 @@ maybeGenerateCharacter
     :: Connection -> QueryOptions -> IO Attributes -> IO (Maybe Character)
 maybeGenerateCharacter connection options attributeGen = do
     (Attributes str dex con int wis cha) <- attributeGen -- generate attributes
-    -- generate random level for character
+    -- generate random level for character, possibly overridden by class maximum
+    -- level
     randLevel <- randInt (minLevel options, maxLevel options)
     character <- queryNamed
         connection
@@ -150,7 +162,9 @@ maybeGenerateCharacter connection options attributeGen = do
         , ":cha" := cha
         , ":randLevel" := randLevel
         ]
-    if null character then return Nothing else return $ Just (head character)
+    if Prelude.null character
+        then return Nothing
+        else return $ Just (head character)
 
 -- | Creates a random character (guaranteed)
 randomCharacter

@@ -34,12 +34,13 @@ app' = do
         S.json char
     S.post "/character" $ do
         queryOpt <- S.jsonData
+        liftIO $ print queryOpt
         case validateQuery queryOpt of
             Right q ->
                 liftIO (nRandomCharacters (count q) q randomAttributes3D6)
                     >>= S.json
-            Left _ ->
-                S.json ("Invalid query" :: String) >> S.status badRequest400
+            Left msg -> S.json ("Invalid query: " ++ msg :: String)
+                >> S.status badRequest400
 
 -- | This is exported for use in automated tests
 app :: IO Application

@@ -14,14 +14,38 @@ import           Data.Aeson                     ( Value(..)
                                                 , encode
                                                 )
 import           Chargen                        ( app )
+import           Character.Race
+import           Character.Class
 import           Queries
+import           Data.Set                      as Set
 
 main :: IO ()
 main = hspec spec
 
+allClasses = fromList [(Assassin) ..]
 
-postBody = encode $ QueryOptions { count = 10, minLevel = 2, maxLevel = 5 }
-minGTmax = encode $ QueryOptions { count = 10, minLevel = 3, maxLevel = 1 }
+allRaces = fromList [(Dwarf) ..]
+
+postBody = encode $ QueryOptions { count           = 10
+                                 , minLevel        = 2
+                                 , maxLevel        = 5
+                                 , selectedClasses = allClasses
+                                 , selectedRaces   = allRaces
+                                 }
+minGTmax = encode $ QueryOptions { count           = 10
+                                 , minLevel        = 3
+                                 , maxLevel        = 1
+                                 , selectedClasses = allClasses
+                                 , selectedRaces   = allRaces
+                                 }
+
+impossibleRaceClassCombination = encode $ QueryOptions
+    { count           = 5
+    , minLevel        = 1
+    , maxLevel        = 5
+    , selectedClasses = Set.singleton Druid
+    , selectedRaces   = Set.fromList [Elf, Dwarf]
+    }
 
 spec :: Spec
 spec = with app $ do
@@ -49,15 +73,7 @@ spec = with app $ do
         $                   post "/character" minGTmax
         `shouldRespondWith` 400
 
-
-
-
-
---     describe "GET /some-json" $ it "responds with some JSON" $ do
---             get "/some-json" `shouldRespondWith` expectedJsonResponse
-
--- expectedJsonResponse =
---     let ResponseMatcher status headers body = [json|{foo: 23, bar: 42}|]
---     in  ResponseMatcher status
---                         [hContentType <:> "application/json; charset=utf-8"]
---                         body
+    describe "POST /character : impossible race-class-combination"
+        $                   it "responds with 400"
+        $                   post "/character" impossibleRaceClassCombination
+        `shouldRespondWith` 400
