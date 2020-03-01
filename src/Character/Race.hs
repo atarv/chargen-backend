@@ -17,6 +17,7 @@ instance FromField Race where
         x <- fromField field
         return $ toEnum x -- Convert from `race_id` to Race instance
 
+-- | Get classes permitted for given race.
 allowedClasses :: Race -> Set Class
 allowedClasses race = case race of
     UndefinedRace -> empty

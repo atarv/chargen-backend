@@ -31,6 +31,7 @@ library
                      , containers
                      , http-types
                      , random
+                     , scientific
                      , scotty
                      , sqlite-simple
                      , text

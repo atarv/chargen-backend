@@ -29,4 +29,3 @@ choose xs = do
 -- | Choose random member of non-empty set
 chooseFromSet :: Set a -> IO a
 chooseFromSet s = choose (elems s)
-
