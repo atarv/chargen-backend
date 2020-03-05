@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, QuasiQuotes, DeriveGeneric #-}
 module Queries
-    ( AttributeGenMethod
+    ( AttributeGenMethod(..)
     , getAttributeMethod
     , nRandomCharacters
     , Queries.defaultOptions
@@ -58,16 +58,10 @@ instance FromJSON QueryOptions where
             .:  "attributeGen"
 
 data AttributeGenMethod = Method3D6 | Method4D6BestOf3
-    deriving (Show, Read, Eq, Ord, Enum, Bounded)
+    deriving (Show, Read, Eq, Generic)
 
-instance FromJSON AttributeGenMethod where
-    parseJSON (Number n) = case maybeInt of
-        Just i  -> return (toEnum i)
-        Nothing -> fail "AttributeGen : Out of bounds"
-        where maybeInt = Scientific.toBoundedInteger n
-    parseJSON _ = mzero
-instance ToJSON AttributeGenMethod where
-    toJSON a = toJSON $ fromEnum a
+instance FromJSON AttributeGenMethod
+instance ToJSON AttributeGenMethod
 
 getAttributeMethod :: AttributeGenMethod -> IO Attributes
 getAttributeMethod a | a == Method3D6 = randomAttributes3D6
@@ -75,7 +69,7 @@ getAttributeMethod a | a == Method3D6 = randomAttributes3D6
 
 -- | Checks that query will have meaningful results
 validateQuery :: QueryOptions -> Either String QueryOptions
-validateQuery (QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selectedClasses = classes, selectedRaces = races, attributeGen = attGen })
+validateQuery QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selectedClasses = classes, selectedRaces = races, attributeGen = attGen }
     | c < 1
     = Left "Invalid count"
     | minL < 1 || minL > maxL
@@ -109,8 +103,8 @@ defaultOptions :: QueryOptions
 defaultOptions = QueryOptions { count           = 10
                               , minLevel        = 1
                               , maxLevel        = 20
-                              , selectedClasses = Set.fromList [(Assassin) ..]
-                              , selectedRaces   = Set.fromList [(Dwarf) ..]
+                              , selectedClasses = Set.fromList [Assassin ..]
+                              , selectedRaces   = Set.fromList [Dwarf ..]
                               , attributeGen    = Method3D6
                               }
 

@@ -22,21 +22,23 @@ import           Data.Set                      as Set
 main :: IO ()
 main = hspec spec
 
-allClasses = fromList [(Assassin) ..]
+allClasses = fromList [Assassin ..]
 
-allRaces = fromList [(Dwarf) ..]
+allRaces = fromList [Dwarf ..]
 
 postBody = encode $ QueryOptions { count           = 10
                                  , minLevel        = 2
                                  , maxLevel        = 5
                                  , selectedClasses = allClasses
                                  , selectedRaces   = allRaces
+                                 , attributeGen    = Method3D6
                                  }
 minGTmax = encode $ QueryOptions { count           = 10
                                  , minLevel        = 3
                                  , maxLevel        = 1
                                  , selectedClasses = allClasses
                                  , selectedRaces   = allRaces
+                                 , attributeGen    = Method3D6
                                  }
 
 impossibleRaceClassCombination = encode $ QueryOptions
@@ -45,6 +47,7 @@ impossibleRaceClassCombination = encode $ QueryOptions
     , maxLevel        = 5
     , selectedClasses = Set.singleton Druid
     , selectedRaces   = Set.fromList [Elf, Dwarf]
+    , attributeGen    = Method4D6BestOf3
     }
 
 spec :: Spec

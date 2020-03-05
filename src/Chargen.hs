@@ -14,16 +14,6 @@ import qualified Web.Scotty                    as S
 import           Control.Monad.IO.Class
 import           Queries
 
-corsPolicy :: CorsResourcePolicy
-corsPolicy = CorsResourcePolicy Nothing
-                                [methodPost, methodGet, methodOptions]
-                                [hContentType, hAuthorization]
-                                Nothing
-                                Nothing
-                                False
-                                False
-                                False
-
 -- | Define routes
 app' :: S.ScottyM ()
 app' = do
@@ -46,3 +36,13 @@ app = S.scottyApp app'
 -- | Start the application
 runApp :: IO ()
 runApp = S.scotty 8080 app'
+
+corsPolicy :: CorsResourcePolicy
+corsPolicy = CorsResourcePolicy Nothing
+                                [methodPost, methodGet, methodOptions]
+                                [hContentType, hAuthorization]
+                                Nothing
+                                Nothing
+                                False
+                                False
+                                False
