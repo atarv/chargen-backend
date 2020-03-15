@@ -6,8 +6,8 @@ import           Database.SQLite.Simple.FromField
 import           Data.Set
 import           Character.Class
 
--- TODO: Add rest of the races
-data Race = UndefinedRace | Dwarf | Elf | Gnome
+data Race =
+    UndefinedRace | Dwarf | Elf | Gnome | HalfElf | Halfling | HalfOrc | Human
     deriving (Enum, Bounded, Eq, Ord, Show, Read, Generic)
 
 instance FromJSON Race
@@ -21,6 +21,10 @@ instance FromField Race where
 allowedClasses :: Race -> Set Class
 allowedClasses race = case race of
     UndefinedRace -> empty
-    Dwarf         -> fromList [Assassin, Cleric, Fighter]
-    Elf           -> fromList [Assassin, Cleric, Fighter]
-    Gnome         -> fromList [Assassin, Cleric, Fighter]
+    Dwarf         -> fromList [Assassin, Cleric, Fighter, Thief]
+    Elf           -> fromList [Assassin, Cleric, Fighter, MagicUser, Thief]
+    Gnome         -> fromList [Assassin, Cleric, Fighter, Illusionist, Thief]
+    HalfElf -> fromList [Assassin, Cleric, Fighter, MagicUser, Ranger, Thief]
+    Halfling      -> fromList [Fighter, Druid, Thief]
+    HalfOrc       -> fromList [Assassin, Cleric, Fighter, Thief]
+    Human         -> fromList [Assassin ..]
