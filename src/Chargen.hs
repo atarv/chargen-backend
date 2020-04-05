@@ -23,7 +23,6 @@ app' = do
         S.json char
     S.post "/character" $ do
         queryOpt <- S.jsonData
-        liftIO $ print queryOpt
         case validateQuery queryOpt of
             Right q   -> liftIO (nRandomCharacters (count q) q) >>= S.json
             Left  msg -> S.json ("Invalid query: " ++ msg :: String)
