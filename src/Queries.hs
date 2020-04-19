@@ -69,7 +69,7 @@ getAttributeMethod a | a == Method3D6 = randomAttributes3D6
 
 -- | Checks that query will have meaningful results
 validateQuery :: QueryOptions -> Either String QueryOptions
-validateQuery QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selectedClasses = classes, selectedRaces = races, attributeGen = attGen }
+validateQuery opts@(QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selectedClasses = classes, selectedRaces = races, attributeGen = attGen })
     | c < 1
     = Left "Invalid count"
     | minL < 1 || minL > maxL
@@ -88,15 +88,7 @@ validateQuery QueryOptions { count = c, minLevel = minL, maxLevel = maxL, select
         races
     = Left "No permitted class selected for given races"
     | otherwise
-    = Right
-        (QueryOptions { count           = c
-                      , minLevel        = minL
-                      , maxLevel        = maxL
-                      , selectedClasses = classes
-                      , selectedRaces   = races
-                      , attributeGen    = attGen
-                      }
-        )
+    = Right opts
 
 -- | Default options for restricting query results
 defaultOptions :: QueryOptions
@@ -112,9 +104,10 @@ defaultOptions = QueryOptions { count           = 10
 openChargenDb :: IO Connection
 openChargenDb = open =<< getDataFileName "assets/chargen.db"
 
--- | Try to generate random 'Character' with given 'Attributes'
-maybeGenerateCharacter :: Connection -> QueryOptions -> IO (Maybe Character)
-maybeGenerateCharacter connection options = do
+-- | Try to generate random 'Character' with given 'Attributes'.
+--   This may recurse infinitely with certain options combinations.
+generateCharacter :: Connection -> QueryOptions -> IO Character
+generateCharacter connection options = do
      -- Generate attributes
     (Attributes str dex con int wis cha) <- getAttributeMethod
         (attributeGen options)
@@ -192,19 +185,8 @@ maybeGenerateCharacter connection options = do
         , ":classId" := fromEnum chosenClass
         ]
     if Prelude.null character
-        then return Nothing
-        else return $ Just (head character)
-
--- | Creates a random character (guaranteed)
-randomCharacter
-    :: Connection    -- ^ Database connection
-    -> QueryOptions  -- ^ Options to restrict query results
-    -> IO Character  -- ^ Random character
-randomCharacter connection options = do
-    char <- maybeGenerateCharacter connection options
-    case char of
-        Just c  -> return c
-        Nothing -> randomCharacter connection options
+        then generateCharacter connection options
+        else return $ head character
 
 -- | Creates a number of random characters
 nRandomCharacters
@@ -213,6 +195,6 @@ nRandomCharacters
     -> IO [Character]   -- ^ Random characters
 nRandomCharacters n options = do
     conn  <- openChargenDb
-    chars <- replicateM n $ randomCharacter conn options
+    chars <- replicateM n $ generateCharacter conn options
     close conn
     return chars
