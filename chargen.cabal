@@ -11,7 +11,6 @@ copyright:           2020 Aleksi Tarvainen
 category:            Web
 build-type:          Simple
 extra-source-files:  README.md
-data-files:          assets/chargen.db
 cabal-version:       >=1.10
 
 library

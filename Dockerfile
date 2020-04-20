@@ -6,15 +6,20 @@ FROM haskell:8.6.5 as builder
 WORKDIR /app
 COPY . .
 
-# Build
-# Save time and space using system provided GHC, otherwise stack would install
-# the compiler version specified in stack.yaml
-RUN stack --system-ghc setup
-RUN stack --system-ghc build
+# Build executable
+RUN stack setup
+RUN stack build --copy-bins
 
-# Service must listen to $PORT environment variable.
-# This default value facilitates local development.
-ENV PORT 8080
+# Use a Docker multi-stage build to create a lean production image.
+# https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
+FROM fpco/haskell-scratch:integer-gmp
+
+# Copy the executable from the builder stage to the production image.
+WORKDIR /root/
+COPY --from=builder /root/.local/bin/chargen-exe .
+
+# Copy datafiles
+COPY assets/chargen.db /data/
 
 # Run the web service on container startup.
-CMD ["stack", "--system-ghc", "run"]
+CMD ["./chargen-exe", "/data/chargen.db"]

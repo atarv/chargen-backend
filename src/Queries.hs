@@ -30,6 +30,7 @@ import           Character.Race
 import           GHC.Generics
 import           Data.Aeson
 import           Data.Set                      as Set
+import System.Environment (getArgs)
 
 -- | User given options and constraints for generating random characters
 data QueryOptions =
@@ -102,7 +103,7 @@ defaultOptions = QueryOptions { count           = 10
 
 -- | Open connection to SQLite database conveniently
 openChargenDb :: IO Connection
-openChargenDb = open =<< getDataFileName "assets/chargen.db"
+openChargenDb = open =<< (return . head) =<< getArgs
 
 -- | Try to generate random 'Character' with given 'Attributes'.
 --   This may recurse infinitely with certain options combinations.

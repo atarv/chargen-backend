@@ -15,7 +15,8 @@ cd chargen-backend
 stack build
 ```
 
-Run the program with `stack run`. By default it uses port 8080.
+Run the program with `stack run -- assets/chargen.db`. By default it uses
+port 8080.
 
 ## Legal
 
