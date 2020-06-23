@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes, DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings, QuasiQuotes, DeriveGeneric, RecordWildCards #-}
 module Queries
     ( AttributeGenMethod(..)
-    , getAttributeMethod
+    , generateAttributesWith
     , nRandomCharacters
     , Queries.defaultOptions
     , QueryOptions(..)
@@ -10,7 +10,7 @@ module Queries
 where
 
 import           Control.Monad
-import           Data.Scientific               as Scientific
+import qualified Data.Scientific               as Scientific
 import           Database.SQLite.Simple
 import           Database.SQLite.Simple.QQ
 import           Paths_chargen                  ( getDataFileName )
@@ -30,7 +30,10 @@ import           Character.Race
 import           GHC.Generics
 import           Data.Aeson
 import           Data.Set                      as Set
-import System.Environment (getArgs)
+import           System.Environment             ( getArgs )
+import           Control.Exception              ( bracket
+                                                , catch
+                                                )
 
 -- | User given options and constraints for generating random characters
 data QueryOptions =
@@ -64,29 +67,29 @@ data AttributeGenMethod = Method3D6 | Method4D6BestOf3
 instance FromJSON AttributeGenMethod
 instance ToJSON AttributeGenMethod
 
-getAttributeMethod :: AttributeGenMethod -> IO Attributes
-getAttributeMethod a | a == Method3D6 = randomAttributes3D6
-                     | otherwise      = randomAttributes4D6BestOf3
+generateAttributesWith :: AttributeGenMethod -> IO Attributes
+generateAttributesWith a | a == Method3D6 = randomAttributes3D6
+                         | otherwise      = randomAttributes4D6BestOf3
 
 -- | Checks that query will have meaningful results
 validateQuery :: QueryOptions -> Either String QueryOptions
-validateQuery opts@(QueryOptions { count = c, minLevel = minL, maxLevel = maxL, selectedClasses = classes, selectedRaces = races, attributeGen = attGen })
-    | c < 1
+validateQuery opts@QueryOptions {..}
+    | count < 1
     = Left "Invalid count"
-    | minL < 1 || minL > maxL
+    | minLevel < 1 || minLevel > maxLevel
     = Left "Invalid level constraints"
-    | Set.null races
+    | Set.null selectedRaces
     = Left "No races selected"
-    | Set.null classes
+    | Set.null selectedClasses
     = Left "No classes selected"
-    | Unused `Set.member` classes
+    | Unused `Set.member` selectedClasses
     = Left "Forbidden class"
-    | UndefinedRace `Set.member` races
+    | UndefinedRace `Set.member` selectedRaces
     = Left "Forbidden race"
-    | Set.disjoint classes $ Set.foldl
+    | Set.disjoint selectedClasses $ Set.foldl
         (\cls r -> Set.union (allowedClasses r) cls)
         Set.empty
-        races
+        selectedRaces
     = Left "No permitted class selected for given races"
     | otherwise
     = Right opts
@@ -101,30 +104,20 @@ defaultOptions = QueryOptions { count           = 10
                               , attributeGen    = Method3D6
                               }
 
--- | Open connection to SQLite database conveniently
-openChargenDb :: IO Connection
-openChargenDb = open =<< (return . head) =<< getArgs
-
 -- | Try to generate random 'Character' with given 'Attributes'.
 --   This may recurse infinitely with certain options combinations.
 generateCharacter :: Connection -> QueryOptions -> IO Character
-generateCharacter connection options = do
-     -- Generate attributes
-    (Attributes str dex con int wis cha) <- getAttributeMethod
-        (attributeGen options)
+generateCharacter connection options@QueryOptions {..} = do
+    (Attributes str dex con int wis cha) <- generateAttributesWith attributeGen
     -- Generate random level for character, possibly overridden by class maximum
     -- level
-    randLevel  <- randInt (minLevel options, maxLevel options)
+    randLevel                            <- randInt (minLevel, maxLevel)
     -- Choose race and class at random with restrictions given in options
-    chosenRace <- chooseFromSet $ Set.filter
-        (\r -> (not . Set.disjoint (selectedClasses options) . allowedClasses) r
-        )
-        (selectedRaces options)
+    chosenRace                           <- chooseFromSet $ Set.filter
+        (not . Set.disjoint selectedClasses . allowedClasses)
+        selectedRaces
     chosenClass <-
-        ( chooseFromSet
-            . Set.intersection (selectedClasses options)
-            . allowedClasses
-            )
+        (chooseFromSet . Set.intersection selectedClasses . allowedClasses)
             chosenRace
     character <- queryNamed
         connection
@@ -191,11 +184,11 @@ generateCharacter connection options = do
 
 -- | Creates a number of random characters
 nRandomCharacters
-    :: Int              -- ^ Number of characters to generate
+    :: String           -- ^ Path to character database (sqlite)
+    -> Int              -- ^ Number of characters to generate
     -> QueryOptions     -- ^ Options to restrict query results
     -> IO [Character]   -- ^ Random characters
-nRandomCharacters n options = do
-    conn  <- openChargenDb
-    chars <- replicateM n $ generateCharacter conn options
-    close conn
-    return chars
+nRandomCharacters dbPath n options = bracket
+    (open dbPath)
+    close
+    (\conn -> replicateM n $ generateCharacter conn options)

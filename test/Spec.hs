@@ -18,6 +18,7 @@ import           Character.Race
 import           Character.Class
 import           Queries
 import           Data.Set                      as Set
+import           System.Environment             ( withArgs )
 
 main :: IO ()
 main = hspec spec
@@ -51,7 +52,7 @@ impossibleRaceClassCombination = encode $ QueryOptions
     }
 
 spec :: Spec
-spec = with app $ do
+spec = with (withArgs ["./assets/chargen.db"] app) $ do
     describe "GET /character"
         $                   it "responds with 200 and JSON content"
         $                   get "/character"
@@ -61,7 +62,6 @@ spec = with app $ do
                                           <:> "application/json; charset=utf-8"
                                     ]
                                 }
-        -- it "responds with a random OSRIC character" 
     describe "POST /character"
         $                   it "responds with 200 and JSON content"
         $                   post "/character" postBody

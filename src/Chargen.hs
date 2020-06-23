@@ -13,28 +13,35 @@ import           Network.Wai.Middleware.Cors
 import qualified Web.Scotty                    as S
 import           Control.Monad.IO.Class
 import           Queries
+import           System.Environment             ( getArgs )
 
--- | Define routes
-app' :: S.ScottyM ()
-app' = do
+app' :: String -> S.ScottyM ()
+app' db = do
     S.middleware $ cors (const $ Just corsPolicy)
+    -- Define routes
     S.get "/character" $ do
-        char <- liftIO $ nRandomCharacters 1 defaultOptions
+        char <- liftIO $ nRandomCharacters db 1 defaultOptions
         S.json char
     S.post "/character" $ do
         queryOpt <- S.jsonData
         case validateQuery queryOpt of
-            Right q   -> liftIO (nRandomCharacters (count q) q) >>= S.json
+            Right q   -> liftIO (nRandomCharacters db (count q) q) >>= S.json
             Left  msg -> S.json ("Invalid query: " ++ msg :: String)
                 >> S.status badRequest400
 
 -- | This is exported for use in automated tests
 app :: IO Application
-app = S.scottyApp app'
+app = do
+    args <- getArgs
+    S.scottyApp $ app' (head args)
 
 -- | Start the application
 runApp :: IO ()
-runApp = S.scotty 8080 app'
+runApp = do
+    args <- getArgs
+    if null args
+        then error "Error: path to character database not given"
+        else S.scotty 8080 $ app' (head args)
 
 corsPolicy :: CorsResourcePolicy
 corsPolicy = CorsResourcePolicy Nothing

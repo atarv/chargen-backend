@@ -38,17 +38,14 @@ fromList xs
 
 -- | Throw 3D6 for each attribute
 randomAttributes3D6 :: IO Attributes
-randomAttributes3D6 = do
-    attrs <- replicateM 6 (nTimesRoll 3 6)
-    (return . fromJust . fromList . map sum) attrs
+randomAttributes3D6 =
+    replicateM 6 (nTimesRoll 3 6) >>= (return . fromJust . fromList . map sum)
 
 -- | Throw 4D6 and pick best of 3 for each attribute. Results in better
 -- attributes on average
 randomAttributes4D6BestOf3 :: IO Attributes
-randomAttributes4D6BestOf3 = do
-    attrs <- replicateM 6 (nTimesRoll 4 6)
-    return
-        $ (fromJust . fromList . map sum . map
-              (take 3 . sortBy (flip $ compare))
-          )
-              attrs
+randomAttributes4D6BestOf3 =
+    replicateM 6 (nTimesRoll 4 6)
+        >>= (return . fromJust . fromList . map
+                (sum . take 3 . sortBy (flip compare))
+            )

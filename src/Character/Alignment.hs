@@ -28,13 +28,12 @@ instance FromJSON Alignment where
 instance ToJSON Alignment where
     toJSON al = toJSON $ alignmentName al
 instance FromField Alignment where
-    fromField (Field (SQLText t) mdata) =
-        let alignment = (readMaybe . T.unpack) t :: Maybe Alignment
-        in  case alignment of
-                Just a  -> Ok a
-                Nothing -> returnError ConversionFailed
-                                       (Field (SQLText t) mdata)
-                                       "need alignment abbreviation"
+    fromField f@(Field (SQLText t) mdata) =
+        let readAlignmentAbbrev = (readMaybe . T.unpack)
+        in  case readAlignmentAbbrev t of
+                Just alignment -> Ok alignment
+                Nothing ->
+                    returnError ConversionFailed f "need alignment abbreviation"
     fromField f = returnError ConversionFailed f "need alignment abbreviation"
 instance FromRow Alignment where
     fromRow = field
