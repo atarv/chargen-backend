@@ -24,32 +24,27 @@ main :: IO ()
 main = hspec spec
 
 allClasses = fromList [Assassin ..]
-
 allRaces = fromList [Dwarf ..]
 
-postBody = encode $ QueryOptions { count           = 10
-                                 , minLevel        = 2
-                                 , maxLevel        = 5
-                                 , selectedClasses = allClasses
-                                 , selectedRaces   = allRaces
-                                 , attributeGen    = Method3D6
-                                 }
-minGTmax = encode $ QueryOptions { count           = 10
-                                 , minLevel        = 3
-                                 , maxLevel        = 1
-                                 , selectedClasses = allClasses
-                                 , selectedRaces   = allRaces
-                                 , attributeGen    = Method3D6
-                                 }
+baseQuery = QueryOptions { count           = 10
+                         , minLevel        = 1
+                         , maxLevel        = 5
+                         , selectedClasses = allClasses
+                         , selectedRaces   = allRaces
+                         , attributeGen    = Method3D6
+                         }
 
-impossibleRaceClassCombination = encode $ QueryOptions
-    { count           = 5
-    , minLevel        = 1
-    , maxLevel        = 5
-    , selectedClasses = Set.singleton Druid
+postBody = encode baseQuery
+minGTmax = encode $ baseQuery { minLevel = 30, maxLevel = 1 }
+
+impossibleRaceClassCombination = encode $ baseQuery
+    { selectedClasses = Set.singleton Druid
     , selectedRaces   = Set.fromList [Elf, Dwarf]
     , attributeGen    = Method4D6BestOf3
     }
+
+noSelectedClasses = encode $ baseQuery { selectedClasses = mempty }
+noSelectedRaces = encode $ baseQuery { selectedRaces = mempty }
 
 spec :: Spec
 spec = with (app "./assets/chargen.db") $ do
@@ -62,6 +57,7 @@ spec = with (app "./assets/chargen.db") $ do
                                           <:> "application/json; charset=utf-8"
                                     ]
                                 }
+
     describe "POST /character"
         $                   it "responds with 200 and JSON content"
         $                   post "/character" postBody
@@ -79,4 +75,19 @@ spec = with (app "./assets/chargen.db") $ do
     describe "POST /character : impossible race-class-combination"
         $                   it "responds with 400"
         $                   post "/character" impossibleRaceClassCombination
+        `shouldRespondWith` 400
+
+    describe "POST /character : no selected classes"
+        $                   it "responds with 400"
+        $                   post "/character" noSelectedClasses
+        `shouldRespondWith` 400
+
+    describe "POST /character : no selected races"
+        $                   it "responds with 400"
+        $                   post "/character" noSelectedRaces
+        `shouldRespondWith` 400
+
+    describe "POST /character : too high count"
+        $ it "responds with 400"
+        $ post "/character" (encode $ baseQuery { count = 1001 })
         `shouldRespondWith` 400

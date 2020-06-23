@@ -75,7 +75,9 @@ generateAttributesWith a | a == Method3D6 = randomAttributes3D6
 validateQuery :: QueryOptions -> Either String QueryOptions
 validateQuery opts@QueryOptions {..}
     | count < 1
-    = Left "Invalid count"
+    = Left "Count too low"
+    | count > 1000
+    = Left "Count too high"
     | minLevel < 1 || minLevel > maxLevel
     = Left "Invalid level constraints"
     | Set.null selectedRaces
