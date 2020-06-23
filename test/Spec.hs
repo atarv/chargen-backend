@@ -52,7 +52,7 @@ impossibleRaceClassCombination = encode $ QueryOptions
     }
 
 spec :: Spec
-spec = with (withArgs ["./assets/chargen.db"] app) $ do
+spec = with (app "./assets/chargen.db") $ do
     describe "GET /character"
         $                   it "responds with 200 and JSON content"
         $                   get "/character"

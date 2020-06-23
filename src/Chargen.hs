@@ -19,21 +19,20 @@ app' :: String -> S.ScottyM ()
 app' db = do
     S.middleware $ cors (const $ Just corsPolicy)
     -- Define routes
-    S.get "/character" $ do
-        char <- liftIO $ nRandomCharacters db 1 defaultOptions
-        S.json char
+    S.get "/character"
+        $   liftIO (nRandomCharacters db 1 defaultOptions)
+        >>= S.json
     S.post "/character" $ do
         queryOpt <- S.jsonData
         case validateQuery queryOpt of
-            Right q   -> liftIO (nRandomCharacters db (count q) q) >>= S.json
-            Left  msg -> S.json ("Invalid query: " ++ msg :: String)
+            Right q@QueryOptions { count = c } ->
+                liftIO (nRandomCharacters db c q) >>= S.json
+            Left msg -> S.json ("Invalid query: " ++ msg :: String)
                 >> S.status badRequest400
 
 -- | This is exported for use in automated tests
-app :: IO Application
-app = do
-    args <- getArgs
-    S.scottyApp $ app' (head args)
+app :: String -> IO Application
+app = S.scottyApp . app'
 
 -- | Start the application
 runApp :: IO ()
